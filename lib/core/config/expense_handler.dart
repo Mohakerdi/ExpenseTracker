@@ -41,7 +41,7 @@ class ExpenseHandler {
     await db.insert(
       'expenses',
       expense.toMap(),
-      conflictAlgorithm: ConflictAlgorithm.replace,
+      conflictAlgorithm: ConflictAlgorithm.ignore,
     );
   }
 

@@ -25,9 +25,12 @@ class ExpensesNotifier extends StateNotifier<AsyncValue<List<Expense>>> {
     final currentExpenses = state.value ?? [];
     try {
       await ExpenseHandler.instance.insertExpense(expense);
+      if (currentExpenses.any((item) => item.id == expense.id)) {
+        return;
+      }
       state = AsyncValue.data([...currentExpenses, expense]);
-    } catch (error, stackTrace) {
-      state = AsyncValue.error(error, stackTrace);
+    } catch (_) {
+      state = AsyncValue.data(currentExpenses);
     }
   }
 
@@ -38,13 +41,16 @@ class ExpensesNotifier extends StateNotifier<AsyncValue<List<Expense>>> {
       state = AsyncValue.data(
         currentExpenses.where((item) => item.id != expense.id).toList(),
       );
-    } catch (error, stackTrace) {
-      state = AsyncValue.error(error, stackTrace);
+    } catch (_) {
+      state = AsyncValue.data(currentExpenses);
     }
   }
 
   Future<void> restoreExpense(Expense expense, int index) async {
     final currentExpenses = [...(state.value ?? [])];
+    if (currentExpenses.any((item) => item.id == expense.id)) {
+      return;
+    }
     try {
       await ExpenseHandler.instance.insertExpense(expense);
       if (index < 0 || index > currentExpenses.length) {
@@ -53,8 +59,8 @@ class ExpensesNotifier extends StateNotifier<AsyncValue<List<Expense>>> {
         currentExpenses.insert(index, expense);
       }
       state = AsyncValue.data(currentExpenses);
-    } catch (error, stackTrace) {
-      state = AsyncValue.error(error, stackTrace);
+    } catch (_) {
+      state = AsyncValue.data(currentExpenses);
     }
   }
 }
