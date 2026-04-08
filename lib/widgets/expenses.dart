@@ -64,8 +64,20 @@ class Expenses extends ConsumerWidget {
         appBar: AppBar(
           title: const Text('Flutter ExpenseTracker'),
         ),
-        body: const Center(
-          child: Text('Failed to load expenses.'),
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Unable to load expenses. Please try again.'),
+              const SizedBox(height: 12),
+              ElevatedButton(
+                onPressed: () {
+                  ref.read(expensesProvider.notifier).reloadExpenses();
+                },
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
         ),
       );
     }

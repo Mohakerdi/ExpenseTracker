@@ -50,10 +50,8 @@ class Expense {
       title: map['title'] as String,
       amount: (map['amount'] as num).toDouble(),
       date: DateTime.parse(map['date'] as String),
-      category: Category.values.firstWhere(
-        (value) => value.name == map['category'],
-        orElse: () => Category.leisure,
-      ),
+      category:
+          Category.values.firstWhere((value) => value.name == map['category']),
     );
   }
 }

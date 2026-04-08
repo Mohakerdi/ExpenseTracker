@@ -7,6 +7,11 @@ class ExpensesNotifier extends StateNotifier<AsyncValue<List<Expense>>> {
     _loadExpenses();
   }
 
+  Future<void> reloadExpenses() async {
+    state = const AsyncValue.loading();
+    await _loadExpenses();
+  }
+
   Future<void> _loadExpenses() async {
     try {
       final expenses = await ExpenseHandler.instance.getExpenses();
@@ -17,28 +22,40 @@ class ExpensesNotifier extends StateNotifier<AsyncValue<List<Expense>>> {
   }
 
   Future<void> addExpense(Expense expense) async {
-    await ExpenseHandler.instance.insertExpense(expense);
     final currentExpenses = state.value ?? [];
-    state = AsyncValue.data([...currentExpenses, expense]);
+    try {
+      await ExpenseHandler.instance.insertExpense(expense);
+      state = AsyncValue.data([...currentExpenses, expense]);
+    } catch (error, stackTrace) {
+      state = AsyncValue.error(error, stackTrace);
+    }
   }
 
   Future<void> removeExpense(Expense expense) async {
-    await ExpenseHandler.instance.deleteExpense(expense.id);
     final currentExpenses = state.value ?? [];
-    state = AsyncValue.data(
-      currentExpenses.where((item) => item.id != expense.id).toList(),
-    );
+    try {
+      await ExpenseHandler.instance.deleteExpense(expense.id);
+      state = AsyncValue.data(
+        currentExpenses.where((item) => item.id != expense.id).toList(),
+      );
+    } catch (error, stackTrace) {
+      state = AsyncValue.error(error, stackTrace);
+    }
   }
 
   Future<void> restoreExpense(Expense expense, int index) async {
-    await ExpenseHandler.instance.insertExpense(expense);
     final currentExpenses = [...(state.value ?? [])];
-    if (index < 0 || index > currentExpenses.length) {
-      currentExpenses.add(expense);
-    } else {
-      currentExpenses.insert(index, expense);
+    try {
+      await ExpenseHandler.instance.insertExpense(expense);
+      if (index < 0 || index > currentExpenses.length) {
+        currentExpenses.add(expense);
+      } else {
+        currentExpenses.insert(index, expense);
+      }
+      state = AsyncValue.data(currentExpenses);
+    } catch (error, stackTrace) {
+      state = AsyncValue.error(error, stackTrace);
     }
-    state = AsyncValue.data(currentExpenses);
   }
 }
 
