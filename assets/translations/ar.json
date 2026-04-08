@@ -20,6 +20,7 @@
   "no_image_selected_optional": "لم يتم اختيار صورة (اختياري)",
   "camera": "الكاميرا",
   "gallery": "المعرض",
+  "image_permission_required": "تعذر الوصول إلى الصور. يرجى السماح بالإذن.",
   "remove": "إزالة",
   "cancel": "إلغاء",
   "save_expense": "حفظ المصروف",

@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as path;
@@ -38,6 +39,9 @@ class _NewExpenseState extends State<NewExpense> {
         return;
       }
       if (response.file != null) {
+        if (!mounted) {
+          return;
+        }
         setState(() {
           _selectedImage = File(response.file!.path);
         });
@@ -115,29 +119,45 @@ class _NewExpenseState extends State<NewExpense> {
   }
 
   Future<void> _pickImage(ImageSource source) async {
-    final pickedImage = await _picker.pickImage(
-      source: source,
-      maxWidth: 1200,
-      imageQuality: 85,
-    );
+    try {
+      final pickedImage = await _picker.pickImage(
+        source: source,
+        maxWidth: 1200,
+        imageQuality: 85,
+      );
 
-    if (pickedImage == null) {
-      return;
+      if (pickedImage == null) {
+        return;
+      }
+
+      final appDir = await getApplicationDocumentsDirectory();
+      final extension = _imageFileExtensionFromPath(pickedImage.path);
+      final imageBytes = await _compressImageBytesIfPossible(pickedImage);
+      final copiedImage = await File(
+        path.join(appDir.path, '${uuid.v4()}$extension'),
+      ).writeAsBytes(
+        imageBytes,
+        flush: true,
+      );
+
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _selectedImage = copiedImage;
+      });
+    } on PlatformException {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..showSnackBar(
+          SnackBar(
+            content: Text('image_permission_required'.tr()),
+          ),
+        );
     }
-
-    final appDir = await getApplicationDocumentsDirectory();
-    final extension = _imageFileExtensionFromPath(pickedImage.path);
-    final imageBytes = await _compressImageBytesIfPossible(pickedImage);
-    final copiedImage = await File(
-      path.join(appDir.path, '${uuid.v4()}$extension'),
-    ).writeAsBytes(
-      imageBytes,
-      flush: true,
-    );
-
-    setState(() {
-      _selectedImage = copiedImage;
-    });
   }
 
   Future<Uint8List> _compressImageBytesIfPossible(XFile image) async {

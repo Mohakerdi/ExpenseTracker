@@ -20,6 +20,7 @@
   "no_image_selected_optional": "No image selected (optional)",
   "camera": "Camera",
   "gallery": "Gallery",
+  "image_permission_required": "Could not access images. Please allow permission.",
   "remove": "Remove",
   "cancel": "Cancel",
   "save_expense": "Save Expense",
