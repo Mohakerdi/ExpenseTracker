@@ -39,6 +39,12 @@ class _ExpensesState extends ConsumerState<Expenses> {
   }
 
   Future<void> _loadExpenses() async {
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+        _hasLoadingError = false;
+      });
+    }
     final expensesNotifier = ref.read(expensesProvider.notifier);
     try {
       await expensesNotifier.loadExpenses();
