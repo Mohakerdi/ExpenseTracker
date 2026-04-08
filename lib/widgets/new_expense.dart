@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as path;
@@ -50,15 +51,14 @@ class _NewExpenseState extends State<NewExpense> {
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('Invalid input'),
-          content: const Text(
-              'Please make sure a valid title, amount, date and category was entered.'),
+          title: Text('invalid_input_title'.tr()),
+          content: Text('invalid_input_message'.tr()),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.pop(ctx);
               },
-              child: const Text('Okay'),
+              child: Text('okay'.tr()),
             ),
           ],
         ),
@@ -90,14 +90,28 @@ class _NewExpenseState extends State<NewExpense> {
     }
 
     final appDir = await getApplicationDocumentsDirectory();
-    final uniqueFileName = '${uuid.v4()}_${path.basename(pickedImage.path)}';
+    final uniqueFileNameWithExtension =
+        '${uuid.v4()}_${path.basename(pickedImage.path)}';
     final copiedImage = await File(pickedImage.path).copy(
-      path.join(appDir.path, uniqueFileName),
+      path.join(appDir.path, uniqueFileNameWithExtension),
     );
 
     setState(() {
       _selectedImage = copiedImage;
     });
+  }
+
+  String _localizedCategoryName(Category category) {
+    switch (category) {
+      case Category.food:
+        return 'food'.tr();
+      case Category.travel:
+        return 'travel'.tr();
+      case Category.leisure:
+        return 'leisure'.tr();
+      case Category.work:
+        return 'work'.tr();
+    }
   }
 
   @override
@@ -122,8 +136,8 @@ class _NewExpenseState extends State<NewExpense> {
             TextField(
               controller: _titleController,
               maxLength: 50,
-              decoration: const InputDecoration(
-                label: Text('Title'),
+              decoration: InputDecoration(
+                label: Text('title'.tr()),
               ),
             ),
             Row(
@@ -132,9 +146,9 @@ class _NewExpenseState extends State<NewExpense> {
                   child: TextField(
                     controller: _amountController,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       prefixText: '\$ ',
-                      label: Text('Amount'),
+                      label: Text('amount'.tr()),
                     ),
                   ),
                 ),
@@ -146,7 +160,7 @@ class _NewExpenseState extends State<NewExpense> {
                     children: [
                       Text(
                         _selectedDate == null
-                            ? 'No date selected'
+                            ? 'no_date_selected'.tr()
                             : formatter.format(_selectedDate!),
                       ),
                       IconButton(
@@ -174,7 +188,7 @@ class _NewExpenseState extends State<NewExpense> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (_selectedImage == null)
-                    const Text('No image selected (optional)')
+                    Text('no_image_selected_optional'.tr())
                   else
                     ClipRRect(
                       borderRadius: BorderRadius.circular(8),
@@ -192,12 +206,12 @@ class _NewExpenseState extends State<NewExpense> {
                       OutlinedButton.icon(
                         onPressed: () => _pickImage(ImageSource.camera),
                         icon: const Icon(Icons.photo_camera),
-                        label: const Text('Camera'),
+                        label: Text('camera'.tr()),
                       ),
                       OutlinedButton.icon(
                         onPressed: () => _pickImage(ImageSource.gallery),
                         icon: const Icon(Icons.photo_library),
-                        label: const Text('Gallery'),
+                        label: Text('gallery'.tr()),
                       ),
                       if (_selectedImage != null)
                         TextButton(
@@ -206,7 +220,7 @@ class _NewExpenseState extends State<NewExpense> {
                               _selectedImage = null;
                             });
                           },
-                          child: const Text('Remove'),
+                          child: Text('remove'.tr()),
                         ),
                     ],
                   ),
@@ -223,7 +237,7 @@ class _NewExpenseState extends State<NewExpense> {
                         (category) => DropdownMenuItem(
                           value: category,
                           child: Text(
-                            category.name.toUpperCase(),
+                            _localizedCategoryName(category),
                           ),
                         ),
                       )
@@ -242,11 +256,11 @@ class _NewExpenseState extends State<NewExpense> {
                   onPressed: () {
                     Navigator.pop(context);
                   },
-                  child: const Text('Cancel'),
+                  child: Text('cancel'.tr()),
                 ),
                 ElevatedButton(
                   onPressed: _submitExpenseData,
-                  child: const Text('Save Expense'),
+                  child: Text('save_expense'.tr()),
                 ),
               ],
             ),
