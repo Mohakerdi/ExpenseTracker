@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -94,12 +95,13 @@ class _NewExpenseState extends State<NewExpense> {
     }
 
     final appDir = await getApplicationDocumentsDirectory();
-    final compressedImagePath =
-        await _compressImageIfPossible(pickedImage.path);
-    final uniqueFileNameWithExtension =
-        '${uuid.v4()}_${path.basename(compressedImagePath)}';
-    final copiedImage = await File(compressedImagePath).copy(
-      path.join(appDir.path, uniqueFileNameWithExtension),
+    final extension = _imageFileExtensionFromPath(pickedImage.path);
+    final imageBytes = await _compressImageBytesIfPossible(pickedImage);
+    final copiedImage = await File(
+      path.join(appDir.path, '${uuid.v4()}$extension'),
+    ).writeAsBytes(
+      imageBytes,
+      flush: true,
     );
 
     setState(() {
@@ -107,28 +109,39 @@ class _NewExpenseState extends State<NewExpense> {
     });
   }
 
-  Future<String> _compressImageIfPossible(String originalImagePath) async {
-    try {
-      final tempDir = await getTemporaryDirectory();
-      final extension = path.extension(originalImagePath);
-      final compressedPath = path.join(
-        tempDir.path,
-        '${uuid.v4()}_compressed$extension',
-      );
+  Future<Uint8List> _compressImageBytesIfPossible(XFile image) async {
+    final originalBytes = await image.readAsBytes();
 
-      final compressedFile = await FlutterImageCompress.compressAndGetFile(
-        originalImagePath,
-        compressedPath,
+    try {
+      final compressedBytes = await FlutterImageCompress.compressWithList(
+        originalBytes,
         minWidth: _compressedImageMaxDimension,
         minHeight: _compressedImageMaxDimension,
         quality: _compressedImageQuality,
         keepExif: true,
       );
 
-      return compressedFile?.path ?? originalImagePath;
+      return compressedBytes.isNotEmpty ? compressedBytes : originalBytes;
     } catch (_) {
-      return originalImagePath;
+      return originalBytes;
     }
+  }
+
+  String _imageFileExtensionFromPath(String imagePath) {
+    final uri = Uri.tryParse(imagePath);
+    final uriPath = uri?.path;
+    final candidatePath =
+        uriPath != null && uriPath.isNotEmpty ? uriPath : imagePath;
+    final extension = path.extension(candidatePath).toLowerCase();
+
+    if (extension == '.png' ||
+        extension == '.webp' ||
+        extension == '.jpg' ||
+        extension == '.jpeg') {
+      return extension;
+    }
+
+    return '.jpg';
   }
 
   String _localizedCategoryName(Category category) {
