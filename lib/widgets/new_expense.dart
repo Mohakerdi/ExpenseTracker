@@ -23,6 +23,31 @@ class NewExpense extends StatefulWidget {
 }
 
 class _NewExpenseState extends State<NewExpense> {
+
+  @override
+  void initState() {
+    super.initState();
+    _retrieveLostData(); // Call this when the widget loads
+  }
+
+  Future<void> _retrieveLostData() async {
+    // retrieveLostData is specifically for Android
+    if (Platform.isAndroid) {
+      final LostDataResponse response = await _picker.retrieveLostData();
+      if (response.isEmpty) {
+        return;
+      }
+      if (response.file != null) {
+        setState(() {
+          _selectedImage = File(response.file!.path);
+        });
+      } else {
+        // Handle the error if necessary
+        print(response.exception);
+      }
+    }
+  }
+
   static const _compressedImageMaxDimension = 1080;
   static const _compressedImageQuality = 75;
   static const _supportedImageExtensions = {

@@ -34,12 +34,6 @@ class ExpensesSettingsDrawer extends StatelessWidget {
             title: Text('dark_mode'.tr()),
             secondary: const Icon(Icons.dark_mode),
           ),
-          SwitchListTile(
-            value: isFlipped,
-            onChanged: onFlipChanged,
-            title: Text('flip_layout'.tr()),
-            secondary: const Icon(Icons.swap_horiz),
-          ),
           const Divider(),
           ListTile(
             title: Text('language'.tr()),
