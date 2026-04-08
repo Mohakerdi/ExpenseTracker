@@ -2,69 +2,29 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:expense_tracker/providers/expenses_provider.dart';
-import 'package:expense_tracker/widgets/new_expense.dart';
-import 'package:expense_tracker/widgets/expenses_list/expenses_list.dart';
 import 'package:expense_tracker/models/expense.dart';
+import 'package:expense_tracker/providers/expenses_provider.dart';
+import 'package:expense_tracker/viewmodels/app_settings_view_model.dart';
+import 'package:expense_tracker/viewmodels/expenses_screen_view_model.dart';
 import 'package:expense_tracker/widgets/chart/chart.dart';
+import 'package:expense_tracker/widgets/expenses/expenses_settings_drawer.dart';
+import 'package:expense_tracker/widgets/expenses_list/expenses_list.dart';
+import 'package:expense_tracker/widgets/new_expense.dart';
 
 class Expenses extends ConsumerStatefulWidget {
-  const Expenses({
-    super.key,
-    required this.isDarkMode,
-    required this.isFlipped,
-    required this.onDarkModeChanged,
-    required this.onFlipChanged,
-  });
-
-  final bool isDarkMode;
-  final bool isFlipped;
-  final void Function(bool value) onDarkModeChanged;
-  final void Function(bool value) onFlipChanged;
+  const Expenses({super.key});
 
   @override
   ConsumerState<Expenses> createState() => _ExpensesState();
 }
 
 class _ExpensesState extends ConsumerState<Expenses> {
-  var _isLoading = true;
-  var _hasLoadingError = false;
-
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadExpenses();
+      ref.read(expensesScreenProvider.notifier).loadExpenses();
     });
-  }
-
-  Future<void> _loadExpenses() async {
-    if (mounted) {
-      setState(() {
-        _isLoading = true;
-        _hasLoadingError = false;
-      });
-    }
-    final expensesNotifier = ref.read(expensesProvider.notifier);
-    try {
-      await expensesNotifier.loadExpenses();
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _isLoading = false;
-        _hasLoadingError = false;
-      });
-    } catch (error) {
-      debugPrint('Failed to load expenses in UI: $error');
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _isLoading = false;
-        _hasLoadingError = true;
-      });
-    }
   }
 
   void _openAddExpenseOverlay(BuildContext context) {
@@ -73,7 +33,7 @@ class _ExpensesState extends ConsumerState<Expenses> {
       context: context,
       builder: (ctx) => NewExpense(
         onAddExpense: (expense) {
-          ref.read(expensesProvider.notifier).addExpense(expense);
+          ref.read(expensesScreenProvider.notifier).addExpense(expense);
         },
       ),
     );
@@ -85,46 +45,45 @@ class _ExpensesState extends ConsumerState<Expenses> {
 
   void _removeExpense(
     BuildContext context,
-    WidgetRef ref,
     List<Expense> expenses,
     Expense expense,
   ) {
     final expenseIndex = expenses.indexOf(expense);
-    ref.read(expensesProvider.notifier).removeExpense(expense);
-    ScaffoldMessenger.of(context).clearSnackBars();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        duration: const Duration(seconds: 3),
-        content: Text('expense_deleted'.tr()),
-        action: SnackBarAction(
-          label: 'undo'.tr(),
-          onPressed: () {
-            ref
-                .read(expensesProvider.notifier)
-                .restoreExpense(expense, expenseIndex);
-          },
+    ref.read(expensesScreenProvider.notifier).removeExpense(expense);
+
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(
+        SnackBar(
+          duration: const Duration(seconds: 3),
+          content: Text('expense_deleted'.tr()),
+          action: SnackBarAction(
+            label: 'undo'.tr(),
+            onPressed: () {
+              ref
+                  .read(expensesScreenProvider.notifier)
+                  .restoreExpense(expense, expenseIndex);
+            },
+          ),
         ),
-      ),
-    );
+      );
   }
 
   @override
   Widget build(BuildContext context) {
     final expenses = ref.watch(expensesProvider);
+    final screenState = ref.watch(expensesScreenProvider);
+    final appSettings = ref.watch(appSettingsProvider);
 
-    if (_isLoading) {
+    if (screenState.isLoading) {
       return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
+        body: Center(child: CircularProgressIndicator()),
       );
     }
 
-    if (_hasLoadingError) {
+    if (screenState.hasLoadingError) {
       return Scaffold(
-        appBar: AppBar(
-          title: Text('app_title'.tr()),
-        ),
+        appBar: AppBar(title: Text('app_title'.tr())),
         body: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -132,7 +91,8 @@ class _ExpensesState extends ConsumerState<Expenses> {
               Text('unable_load_expenses'.tr()),
               const SizedBox(height: 12),
               ElevatedButton(
-                onPressed: _loadExpenses,
+                onPressed: () =>
+                    ref.read(expensesScreenProvider.notifier).loadExpenses(),
                 child: Text('retry'.tr()),
               ),
             ],
@@ -141,74 +101,31 @@ class _ExpensesState extends ConsumerState<Expenses> {
       );
     }
 
-    Widget mainContent = const Center(
-      child: SizedBox(),
-    );
-
-    if (expenses.isEmpty) {
-      mainContent = Center(
-        child: Text('no_expenses_found'.tr()),
-      );
-    } else {
-      mainContent = ExpensesList(
-        expenses: expenses,
-        onRemoveExpense: (expense) =>
-            _removeExpense(context, ref, expenses, expense),
-      );
-    }
+    final Widget mainContent = expenses.isEmpty
+        ? Center(child: Text('no_expenses_found'.tr()))
+        : ExpensesList(
+            expenses: expenses,
+            onRemoveExpense: (expense) =>
+                _removeExpense(context, expenses, expense),
+          );
 
     return Scaffold(
       floatingActionButton: FloatingActionButton(
         onPressed: () => _openAddExpenseOverlay(context),
         child: const Icon(Icons.add),
       ),
-      appBar: AppBar(
-        title: Text('app_title'.tr()),
-      ),
-      drawer: Drawer(
-        child: ListView(
-          children: [
-            DrawerHeader(
-              child: Text(
-                'drawer_title'.tr(),
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-            ),
-            SwitchListTile(
-              value: widget.isDarkMode,
-              onChanged: widget.onDarkModeChanged,
-              title: Text('dark_mode'.tr()),
-              secondary: const Icon(Icons.dark_mode),
-            ),
-            const Divider(),
-            ListTile(
-              title: Text('language'.tr()),
-            ),
-            ListTile(
-              leading: const Icon(Icons.language),
-              title: Text('lang_en'.tr()),
-              trailing: context.locale.languageCode == 'en'
-                  ? const Icon(Icons.check)
-                  : null,
-              onTap: () => _changeLanguage(context, const Locale('en')),
-            ),
-            ListTile(
-              leading: const Icon(Icons.language),
-              title: Text('lang_ar'.tr()),
-              trailing: context.locale.languageCode == 'ar'
-                  ? const Icon(Icons.check)
-                  : null,
-              onTap: () => _changeLanguage(context, const Locale('ar')),
-            ),
-          ],
-        ),
+      appBar: AppBar(title: Text('app_title'.tr())),
+      drawer: ExpensesSettingsDrawer(
+        isDarkMode: appSettings.themeMode == ThemeMode.dark,
+        isFlipped: appSettings.isFlipped,
+        onDarkModeChanged: ref.read(appSettingsProvider.notifier).setDarkMode,
+        onFlipChanged: ref.read(appSettingsProvider.notifier).setFlipped,
+        onLanguageChanged: (locale) => _changeLanguage(context, locale),
       ),
       body: Column(
         children: [
           Chart(expenses: expenses),
-          Expanded(
-            child: mainContent,
-          ),
+          Expanded(child: mainContent),
         ],
       ),
     );

@@ -2,11 +2,15 @@ import 'dart:io';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 
 import 'package:expense_tracker/models/expense.dart';
+import 'package:expense_tracker/widgets/new_expense/expense_form_actions.dart';
+import 'package:expense_tracker/widgets/new_expense/expense_image_picker_section.dart';
+import 'package:expense_tracker/widgets/new_expense/expense_primary_fields.dart';
 
 class NewExpense extends StatefulWidget {
   const NewExpense({super.key, required this.onAddExpense});
@@ -14,20 +18,22 @@ class NewExpense extends StatefulWidget {
   final void Function(Expense expense) onAddExpense;
 
   @override
-  State<NewExpense> createState() {
-    return _NewExpenseState();
-  }
+  State<NewExpense> createState() => _NewExpenseState();
 }
 
 class _NewExpenseState extends State<NewExpense> {
+  static const _compressedImageMaxDimension = 1080;
+  static const _compressedImageQuality = 75;
+
   final _titleController = TextEditingController();
   final _amountController = TextEditingController();
   final _picker = ImagePicker();
+
   DateTime? _selectedDate;
   Category _selectedCategory = Category.leisure;
   File? _selectedImage;
 
-  void _presentDatePicker() async {
+  Future<void> _presentDatePicker() async {
     final now = DateTime.now();
     final firstDate = DateTime(now.year - 1, now.month, now.day);
     final pickedDate = await showDatePicker(
@@ -42,9 +48,9 @@ class _NewExpenseState extends State<NewExpense> {
   }
 
   void _submitExpenseData() {
-    final enteredAmount = double.tryParse(_amountController
-        .text); // tryParse('Hello') => null, tryParse('1.12') => 1.12
+    final enteredAmount = double.tryParse(_amountController.text);
     final amountIsInvalid = enteredAmount == null || enteredAmount <= 0;
+
     if (_titleController.text.trim().isEmpty ||
         amountIsInvalid ||
         _selectedDate == null) {
@@ -55,9 +61,7 @@ class _NewExpenseState extends State<NewExpense> {
           content: Text('invalid_input_message'.tr()),
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.pop(ctx);
-              },
+              onPressed: () => Navigator.pop(ctx),
               child: Text('okay'.tr()),
             ),
           ],
@@ -90,15 +94,41 @@ class _NewExpenseState extends State<NewExpense> {
     }
 
     final appDir = await getApplicationDocumentsDirectory();
+    final compressedImagePath =
+        await _compressImageIfPossible(pickedImage.path);
     final uniqueFileNameWithExtension =
-        '${uuid.v4()}_${path.basename(pickedImage.path)}';
-    final copiedImage = await File(pickedImage.path).copy(
+        '${uuid.v4()}_${path.basename(compressedImagePath)}';
+    final copiedImage = await File(compressedImagePath).copy(
       path.join(appDir.path, uniqueFileNameWithExtension),
     );
 
     setState(() {
       _selectedImage = copiedImage;
     });
+  }
+
+  Future<String> _compressImageIfPossible(String originalImagePath) async {
+    try {
+      final tempDir = await getTemporaryDirectory();
+      final extension = path.extension(originalImagePath);
+      final compressedPath = path.join(
+        tempDir.path,
+        '${uuid.v4()}_compressed$extension',
+      );
+
+      final compressedFile = await FlutterImageCompress.compressAndGetFile(
+        originalImagePath,
+        compressedPath,
+        minWidth: _compressedImageMaxDimension,
+        minHeight: _compressedImageMaxDimension,
+        quality: _compressedImageQuality,
+        keepExif: true,
+      );
+
+      return compressedFile?.path ?? originalImagePath;
+    } catch (_) {
+      return originalImagePath;
+    }
   }
 
   String _localizedCategoryName(Category category) {
@@ -133,136 +163,36 @@ class _NewExpenseState extends State<NewExpense> {
         ),
         child: Column(
           children: [
-            TextField(
-              controller: _titleController,
-              maxLength: 50,
-              decoration: InputDecoration(
-                label: Text('title'.tr()),
-              ),
-            ),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _amountController,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      prefixText: '\$ ',
-                      label: Text('amount'.tr()),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Text(
-                        _selectedDate == null
-                            ? 'no_date_selected'.tr()
-                            : formatter.format(_selectedDate!),
-                      ),
-                      IconButton(
-                        onPressed: _presentDatePicker,
-                        icon: const Icon(
-                          Icons.calendar_month,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+            ExpensePrimaryFields(
+              titleController: _titleController,
+              amountController: _amountController,
+              selectedDate: _selectedDate,
+              onPickDate: _presentDatePicker,
             ),
             const SizedBox(height: 16),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: Theme.of(context).colorScheme.outlineVariant,
-                ),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (_selectedImage == null)
-                    Text('no_image_selected_optional'.tr())
-                  else
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.file(
-                        _selectedImage!,
-                        width: double.infinity,
-                        height: 140,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    children: [
-                      OutlinedButton.icon(
-                        onPressed: () => _pickImage(ImageSource.camera),
-                        icon: const Icon(Icons.photo_camera),
-                        label: Text('camera'.tr()),
-                      ),
-                      OutlinedButton.icon(
-                        onPressed: () => _pickImage(ImageSource.gallery),
-                        icon: const Icon(Icons.photo_library),
-                        label: Text('gallery'.tr()),
-                      ),
-                      if (_selectedImage != null)
-                        TextButton(
-                          onPressed: () {
-                            setState(() {
-                              _selectedImage = null;
-                            });
-                          },
-                          child: Text('remove'.tr()),
-                        ),
-                    ],
-                  ),
-                ],
-              ),
+            ExpenseImagePickerSection(
+              selectedImage: _selectedImage,
+              onPickImage: _pickImage,
+              onRemoveImage: () {
+                setState(() {
+                  _selectedImage = null;
+                });
+              },
             ),
             const SizedBox(height: 16),
-            Row(
-              children: [
-                DropdownButton(
-                  value: _selectedCategory,
-                  items: Category.values
-                      .map(
-                        (category) => DropdownMenuItem(
-                          value: category,
-                          child: Text(
-                            _localizedCategoryName(category),
-                          ),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (value) {
-                    if (value == null) {
-                      return;
-                    }
-                    setState(() {
-                      _selectedCategory = value;
-                    });
-                  },
-                ),
-                const Spacer(),
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  child: Text('cancel'.tr()),
-                ),
-                ElevatedButton(
-                  onPressed: _submitExpenseData,
-                  child: Text('save_expense'.tr()),
-                ),
-              ],
+            ExpenseFormActions(
+              selectedCategory: _selectedCategory,
+              onCategoryChanged: (value) {
+                if (value == null) {
+                  return;
+                }
+                setState(() {
+                  _selectedCategory = value;
+                });
+              },
+              localizedCategoryName: _localizedCategoryName,
+              onCancel: () => Navigator.pop(context),
+              onSubmit: _submitExpenseData,
             ),
           ],
         ),
