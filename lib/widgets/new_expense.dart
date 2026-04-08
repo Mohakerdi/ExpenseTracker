@@ -25,6 +25,12 @@ class NewExpense extends StatefulWidget {
 class _NewExpenseState extends State<NewExpense> {
   static const _compressedImageMaxDimension = 1080;
   static const _compressedImageQuality = 75;
+  static const _supportedImageExtensions = {
+    '.png',
+    '.webp',
+    '.jpg',
+    '.jpeg',
+  };
 
   final _titleController = TextEditingController();
   final _amountController = TextEditingController();
@@ -134,14 +140,7 @@ class _NewExpenseState extends State<NewExpense> {
         uriPath != null && uriPath.isNotEmpty ? uriPath : imagePath;
     final extension = path.extension(candidatePath).toLowerCase();
 
-    if (extension == '.png' ||
-        extension == '.webp' ||
-        extension == '.jpg' ||
-        extension == '.jpeg') {
-      return extension;
-    }
-
-    return '.jpg';
+    return _supportedImageExtensions.contains(extension) ? extension : '.jpg';
   }
 
   String _localizedCategoryName(Category category) {
