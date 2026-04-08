@@ -28,12 +28,14 @@ class Expenses extends ConsumerStatefulWidget {
 
 class _ExpensesState extends ConsumerState<Expenses> {
   var _isLoading = true;
-  String? _loadingError;
+  var _hasLoadingError = false;
 
   @override
   void initState() {
     super.initState();
-    _loadExpenses();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadExpenses();
+    });
   }
 
   Future<void> _loadExpenses() async {
@@ -45,7 +47,7 @@ class _ExpensesState extends ConsumerState<Expenses> {
       }
       setState(() {
         _isLoading = false;
-        _loadingError = null;
+        _hasLoadingError = false;
       });
     } catch (error) {
       debugPrint('Failed to load expenses in UI: $error');
@@ -54,7 +56,7 @@ class _ExpensesState extends ConsumerState<Expenses> {
       }
       setState(() {
         _isLoading = false;
-        _loadingError = 'unable_load_expenses';
+        _hasLoadingError = true;
       });
     }
   }
@@ -112,7 +114,7 @@ class _ExpensesState extends ConsumerState<Expenses> {
       );
     }
 
-    if (_loadingError != null) {
+    if (_hasLoadingError) {
       return Scaffold(
         appBar: AppBar(
           title: Text('app_title'.tr()),
