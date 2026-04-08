@@ -109,7 +109,7 @@ class _ExpensesState extends ConsumerState<Expenses> {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final expenses = ref.watch(expensesProvider);
 
     if (_isLoading) {
@@ -158,14 +158,12 @@ class _ExpensesState extends ConsumerState<Expenses> {
     }
 
     return Scaffold(
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _openAddExpenseOverlay(context),
+        child: const Icon(Icons.add),
+      ),
       appBar: AppBar(
         title: Text('app_title'.tr()),
-        actions: [
-          IconButton(
-            onPressed: () => _openAddExpenseOverlay(context),
-            icon: const Icon(Icons.add),
-          ),
-        ],
       ),
       drawer: Drawer(
         child: ListView(
@@ -181,12 +179,6 @@ class _ExpensesState extends ConsumerState<Expenses> {
               onChanged: widget.onDarkModeChanged,
               title: Text('dark_mode'.tr()),
               secondary: const Icon(Icons.dark_mode),
-            ),
-            SwitchListTile(
-              value: widget.isFlipped,
-              onChanged: widget.onFlipChanged,
-              title: Text('flip_layout'.tr()),
-              secondary: const Icon(Icons.flip),
             ),
             const Divider(),
             ListTile(

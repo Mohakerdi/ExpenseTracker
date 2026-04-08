@@ -2,7 +2,6 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'package:expense_tracker/widgets/expenses.dart';
@@ -66,54 +65,54 @@ class _ExpenseTrackerAppState extends State<ExpenseTrackerApp> {
 
   @override
   Widget build(BuildContext context) {
-    final app = MaterialApp(
+    return MaterialApp(
       localizationsDelegates: context.localizationDelegates,
       supportedLocales: context.supportedLocales,
       locale: context.locale,
       darkTheme: ThemeData.dark().copyWith(
-            useMaterial3: true,
-            colorScheme: kDarkColorScheme,
-            cardTheme: const CardThemeData().copyWith(
-              color: kDarkColorScheme.secondaryContainer,
-              margin: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 8,
-              ),
-            ),
-            elevatedButtonTheme: ElevatedButtonThemeData(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: kDarkColorScheme.primaryContainer,
-                foregroundColor: kDarkColorScheme.onPrimaryContainer,
-              ),
-            ),
+        useMaterial3: true,
+        colorScheme: kDarkColorScheme,
+        cardTheme: const CardThemeData().copyWith(
+          color: kDarkColorScheme.secondaryContainer,
+          margin: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 8,
           ),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: kDarkColorScheme.primaryContainer,
+            foregroundColor: kDarkColorScheme.onPrimaryContainer,
+          ),
+        ),
+      ),
       theme: ThemeData().copyWith(
-            useMaterial3: true,
-            colorScheme: kColorScheme,
-            appBarTheme: const AppBarTheme().copyWith(
-              backgroundColor: kColorScheme.onPrimaryContainer,
-              foregroundColor: kColorScheme.primaryContainer,
-            ),
-            cardTheme: const CardThemeData().copyWith(
-              color: kColorScheme.secondaryContainer,
-              margin: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 8,
-              ),
-            ),
-            elevatedButtonTheme: ElevatedButtonThemeData(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: kColorScheme.primaryContainer,
-              ),
-            ),
-            textTheme: ThemeData().textTheme.copyWith(
-                  titleLarge: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: kColorScheme.onSecondaryContainer,
-                    fontSize: 16,
-                  ),
-                ),
+        useMaterial3: true,
+        colorScheme: kColorScheme,
+        appBarTheme: const AppBarTheme().copyWith(
+          backgroundColor: kColorScheme.onPrimaryContainer,
+          foregroundColor: kColorScheme.primaryContainer,
+        ),
+        cardTheme: const CardThemeData().copyWith(
+          color: kColorScheme.secondaryContainer,
+          margin: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 8,
           ),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: kColorScheme.primaryContainer,
+          ),
+        ),
+        textTheme: ThemeData().textTheme.copyWith(
+              titleLarge: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: kColorScheme.onSecondaryContainer,
+                fontSize: 16,
+              ),
+            ),
+      ),
       themeMode: _themeMode,
       home: Expenses(
         isDarkMode: _themeMode == ThemeMode.dark,
@@ -122,14 +121,6 @@ class _ExpenseTrackerAppState extends State<ExpenseTrackerApp> {
         onFlipChanged: _toggleFlipLayout,
       ),
     );
-
-    if (_isFlipped) {
-      return Directionality(
-        textDirection: TextDirection.rtl,
-        child: app,
-      );
-    }
-
-    return app;
   }
 }
+
