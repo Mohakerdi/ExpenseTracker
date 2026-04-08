@@ -8,7 +8,7 @@ import 'package:expense_tracker/widgets/expenses_list/expenses_list.dart';
 import 'package:expense_tracker/models/expense.dart';
 import 'package:expense_tracker/widgets/chart/chart.dart';
 
-class Expenses extends ConsumerWidget {
+class Expenses extends ConsumerStatefulWidget {
   const Expenses({
     super.key,
     required this.isDarkMode,
@@ -21,6 +21,41 @@ class Expenses extends ConsumerWidget {
   final bool isFlipped;
   final void Function(bool value) onDarkModeChanged;
   final void Function(bool value) onFlipChanged;
+
+  @override
+  ConsumerState<Expenses> createState() => _ExpensesState();
+}
+
+class _ExpensesState extends ConsumerState<Expenses> {
+  var _isLoading = true;
+  String? _loadingError;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadExpenses();
+  }
+
+  Future<void> _loadExpenses() async {
+    try {
+      await ref.read(expensesProvider.notifier).loadExpenses();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _isLoading = false;
+        _loadingError = null;
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _isLoading = false;
+        _loadingError = 'unable_load_expenses';
+      });
+    }
+  }
 
   void _openAddExpenseOverlay(BuildContext context, WidgetRef ref) {
     showModalBottomSheet(
@@ -65,9 +100,13 @@ class Expenses extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final expensesAsync = ref.watch(expensesProvider);
+    final expenses = ref.watch(expensesProvider);
+    final isDarkMode = widget.isDarkMode;
+    final isFlipped = widget.isFlipped;
+    final onDarkModeChanged = widget.onDarkModeChanged;
+    final onFlipChanged = widget.onFlipChanged;
 
-    if (expensesAsync.isLoading) {
+    if (_isLoading) {
       return const Scaffold(
         body: Center(
           child: CircularProgressIndicator(),
@@ -75,7 +114,7 @@ class Expenses extends ConsumerWidget {
       );
     }
 
-    if (expensesAsync.hasError) {
+    if (_loadingError != null) {
       return Scaffold(
         appBar: AppBar(
           title: Text('app_title'.tr()),
@@ -87,9 +126,7 @@ class Expenses extends ConsumerWidget {
               Text('unable_load_expenses'.tr()),
               const SizedBox(height: 12),
               ElevatedButton(
-                onPressed: () {
-                  ref.read(expensesProvider.notifier).reloadExpenses();
-                },
+                onPressed: _loadExpenses,
                 child: Text('retry'.tr()),
               ),
             ],
@@ -97,8 +134,6 @@ class Expenses extends ConsumerWidget {
         ),
       );
     }
-
-    final expenses = expensesAsync.value ?? [];
 
     Widget mainContent = const Center(
       child: SizedBox(),
