@@ -48,7 +48,8 @@ class Expense {
     final storedCategory = map['category'] as String;
     final parsedCategory = Category.values.firstWhere(
       (value) => value.name == storedCategory,
-      orElse: () => throw const FormatException('Invalid expense category value.'),
+      orElse: () =>
+          throw FormatException('Invalid expense category value: $storedCategory'),
     );
 
     return Expense(
