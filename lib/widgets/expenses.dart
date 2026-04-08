@@ -1,65 +1,62 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:expense_tracker/providers/expenses_provider.dart';
 import 'package:expense_tracker/widgets/new_expense.dart';
 import 'package:expense_tracker/widgets/expenses_list/expenses_list.dart';
 import 'package:expense_tracker/models/expense.dart';
 import 'package:expense_tracker/widgets/chart/chart.dart';
 
-class Expenses extends StatefulWidget {
-  const Expenses({super.key});
+class Expenses extends ConsumerWidget {
+  const Expenses({
+    super.key,
+    required this.isDarkMode,
+    required this.isFlipped,
+    required this.onDarkModeChanged,
+    required this.onFlipChanged,
+  });
 
-  @override
-  State<Expenses> createState() {
-    return _ExpensesState();
-  }
-}
+  final bool isDarkMode;
+  final bool isFlipped;
+  final void Function(bool value) onDarkModeChanged;
+  final void Function(bool value) onFlipChanged;
 
-class _ExpensesState extends State<Expenses> {
-  final List<Expense> _registeredExpenses = [
-    Expense(
-      title: 'Flutter Course',
-      amount: 19.99,
-      date: DateTime.now(),
-      category: Category.work,
-    ),
-    Expense(
-      title: 'Cinema',
-      amount: 15.69,
-      date: DateTime.now(),
-      category: Category.leisure,
-    ),
-  ];
-
-  void _openAddExpenseOverlay() {
+  void _openAddExpenseOverlay(BuildContext context, WidgetRef ref) {
     showModalBottomSheet(
       isScrollControlled: true,
       context: context,
-      builder: (ctx) => NewExpense(onAddExpense: _addExpense),
+      builder: (ctx) => NewExpense(
+        onAddExpense: (expense) {
+          ref.read(expensesProvider.notifier).addExpense(expense);
+        },
+      ),
     );
   }
 
-  void _addExpense(Expense expense) {
-    setState(() {
-      _registeredExpenses.add(expense);
-    });
+  Future<void> _changeLanguage(BuildContext context, Locale locale) async {
+    await context.setLocale(locale);
   }
 
-  void _removeExpense(Expense expense) {
-    final expenseIndex = _registeredExpenses.indexOf(expense);
-    setState(() {
-      _registeredExpenses.remove(expense);
-    });
+  void _removeExpense(
+    BuildContext context,
+    WidgetRef ref,
+    List<Expense> expenses,
+    Expense expense,
+  ) {
+    final expenseIndex = expenses.indexOf(expense);
+    ref.read(expensesProvider.notifier).removeExpense(expense);
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         duration: const Duration(seconds: 3),
-        content: const Text('Expense deleted.'),
+        content: Text('expense_deleted'.tr()),
         action: SnackBarAction(
-          label: 'Undo',
+          label: 'undo'.tr(),
           onPressed: () {
-            setState(() {
-              _registeredExpenses.insert(expenseIndex, expense);
-            });
+            ref
+                .read(expensesProvider.notifier)
+                .restoreExpense(expense, expenseIndex);
           },
         ),
       ),
@@ -67,31 +64,115 @@ class _ExpensesState extends State<Expenses> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final expensesAsync = ref.watch(expensesProvider);
+
+    if (expensesAsync.isLoading) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (expensesAsync.hasError) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text('app_title'.tr()),
+        ),
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('unable_load_expenses'.tr()),
+              const SizedBox(height: 12),
+              ElevatedButton(
+                onPressed: () {
+                  ref.read(expensesProvider.notifier).reloadExpenses();
+                },
+                child: Text('retry'.tr()),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final expenses = expensesAsync.value ?? [];
+
     Widget mainContent = const Center(
-      child: Text('No expenses found. Start adding some!'),
+      child: SizedBox(),
     );
 
-    if (_registeredExpenses.isNotEmpty) {
+    if (expenses.isEmpty) {
+      mainContent = Center(
+        child: Text('no_expenses_found'.tr()),
+      );
+    } else {
       mainContent = ExpensesList(
-        expenses: _registeredExpenses,
-        onRemoveExpense: _removeExpense,
+        expenses: expenses,
+        onRemoveExpense: (expense) =>
+            _removeExpense(context, ref, expenses, expense),
       );
     }
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Flutter ExpenseTracker'),
+        title: Text('app_title'.tr()),
         actions: [
           IconButton(
-            onPressed: _openAddExpenseOverlay,
+            onPressed: () => _openAddExpenseOverlay(context, ref),
             icon: const Icon(Icons.add),
           ),
         ],
       ),
+      drawer: Drawer(
+        child: ListView(
+          children: [
+            DrawerHeader(
+              child: Text(
+                'drawer_title'.tr(),
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+            ),
+            SwitchListTile(
+              value: isDarkMode,
+              onChanged: onDarkModeChanged,
+              title: Text('dark_mode'.tr()),
+              secondary: const Icon(Icons.dark_mode),
+            ),
+            SwitchListTile(
+              value: isFlipped,
+              onChanged: onFlipChanged,
+              title: Text('flip_layout'.tr()),
+              secondary: const Icon(Icons.flip),
+            ),
+            const Divider(),
+            ListTile(
+              title: Text('language'.tr()),
+            ),
+            ListTile(
+              leading: const Icon(Icons.language),
+              title: Text('lang_en'.tr()),
+              trailing: context.locale.languageCode == 'en'
+                  ? const Icon(Icons.check)
+                  : null,
+              onTap: () => _changeLanguage(context, const Locale('en')),
+            ),
+            ListTile(
+              leading: const Icon(Icons.language),
+              title: Text('lang_ar'.tr()),
+              trailing: context.locale.languageCode == 'ar'
+                  ? const Icon(Icons.check)
+                  : null,
+              onTap: () => _changeLanguage(context, const Locale('ar')),
+            ),
+          ],
+        ),
+      ),
       body: Column(
         children: [
-          Chart(expenses: _registeredExpenses),
+          Chart(expenses: expenses),
           Expanded(
             child: mainContent,
           ),

@@ -17,20 +17,54 @@ const categoryIcons = {
 
 class Expense {
   Expense({
+    String? id,
     required this.title,
     required this.amount,
     required this.date,
     required this.category,
-  }) : id = uuid.v4();
+    this.imagePath,
+  }) : id = id ?? uuid.v4();
 
   final String id;
   final String title;
   final double amount;
   final DateTime date;
   final Category category;
+  final String? imagePath;
 
   String get formattedDate {
     return formatter.format(date);
+  }
+
+  Map<String, Object?> toMap() {
+    return {
+      'id': id,
+      'title': title,
+      'amount': amount,
+      'date': date.toIso8601String(),
+      'category': category.name,
+      'image_path': imagePath,
+    };
+  }
+
+  factory Expense.fromMap(Map<String, Object?> map) {
+    final storedCategory = map['category'] as String;
+    final parsedCategory = Category.values.firstWhere(
+      (value) => value.name == storedCategory,
+      orElse: () => throw FormatException(
+        'Invalid expense category value: $storedCategory. Valid values are: '
+        '${Category.values.map((category) => category.name).join(', ')}',
+      ),
+    );
+
+    return Expense(
+      id: map['id'] as String,
+      title: map['title'] as String,
+      amount: (map['amount'] as num).toDouble(),
+      date: DateTime.parse(map['date'] as String),
+      category: parsedCategory,
+      imagePath: map['image_path'] as String?,
+    );
   }
 }
 
