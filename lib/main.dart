@@ -45,18 +45,6 @@ class ExpenseTrackerApp extends ConsumerWidget {
       darkTheme: AppTheme.darkTheme,
       theme: AppTheme.lightTheme,
       themeMode: settings.themeMode,
-      builder: (context, child) {
-        final currentDirection = Directionality.of(context);
-        final textDirection = settings.isFlipped
-            ? (currentDirection == TextDirection.ltr
-                ? TextDirection.rtl
-                : TextDirection.ltr)
-            : currentDirection;
-        return Directionality(
-          textDirection: textDirection,
-          child: child ?? const SizedBox.shrink(),
-        );
-      },
       home: const Expenses(),
     );
   }

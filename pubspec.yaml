@@ -71,7 +71,7 @@ flutter:
 
   assets:
     - assets/translations/
-    - assets/icons
+    - assets/icon/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware
@@ -102,4 +102,4 @@ flutter_launcher_icons:
   android: true
   ios: true
   windows: true
-  image_path: "assets/icon/appIcon.png"
+  image_path: "assets/icons/appIcon.png"
