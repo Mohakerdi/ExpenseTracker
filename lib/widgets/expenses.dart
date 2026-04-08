@@ -46,7 +46,8 @@ class _ExpensesState extends ConsumerState<Expenses> {
         _isLoading = false;
         _loadingError = null;
       });
-    } catch (_) {
+    } catch (error) {
+      debugPrint('Failed to load expenses in UI: $error');
       if (!mounted) {
         return;
       }
@@ -101,10 +102,6 @@ class _ExpensesState extends ConsumerState<Expenses> {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final expenses = ref.watch(expensesProvider);
-    final isDarkMode = widget.isDarkMode;
-    final isFlipped = widget.isFlipped;
-    final onDarkModeChanged = widget.onDarkModeChanged;
-    final onFlipChanged = widget.onFlipChanged;
 
     if (_isLoading) {
       return const Scaffold(
@@ -171,14 +168,14 @@ class _ExpensesState extends ConsumerState<Expenses> {
               ),
             ),
             SwitchListTile(
-              value: isDarkMode,
-              onChanged: onDarkModeChanged,
+              value: widget.isDarkMode,
+              onChanged: widget.onDarkModeChanged,
               title: Text('dark_mode'.tr()),
               secondary: const Icon(Icons.dark_mode),
             ),
             SwitchListTile(
-              value: isFlipped,
-              onChanged: onFlipChanged,
+              value: widget.isFlipped,
+              onChanged: widget.onFlipChanged,
               title: Text('flip_layout'.tr()),
               secondary: const Icon(Icons.flip),
             ),
