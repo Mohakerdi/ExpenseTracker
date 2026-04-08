@@ -17,11 +17,12 @@ const categoryIcons = {
 
 class Expense {
   Expense({
+    String? id,
     required this.title,
     required this.amount,
     required this.date,
     required this.category,
-  }) : id = uuid.v4();
+  }) : id = id ?? uuid.v4();
 
   final String id;
   final String title;
@@ -31,6 +32,29 @@ class Expense {
 
   String get formattedDate {
     return formatter.format(date);
+  }
+
+  Map<String, Object?> toMap() {
+    return {
+      'id': id,
+      'title': title,
+      'amount': amount,
+      'date': date.toIso8601String(),
+      'category': category.name,
+    };
+  }
+
+  factory Expense.fromMap(Map<String, Object?> map) {
+    return Expense(
+      id: map['id'] as String,
+      title: map['title'] as String,
+      amount: (map['amount'] as num).toDouble(),
+      date: DateTime.parse(map['date'] as String),
+      category: Category.values.firstWhere(
+        (value) => value.name == map['category'],
+        orElse: () => Category.leisure,
+      ),
+    );
   }
 }
 

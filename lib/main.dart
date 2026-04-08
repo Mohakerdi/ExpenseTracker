@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:expense_tracker/widgets/expenses.dart';
 
@@ -13,7 +14,18 @@ var kDarkColorScheme = ColorScheme.fromSeed(
 
 void main() {
   runApp(
-    MaterialApp(
+    const ProviderScope(
+      child: ExpenseTrackerApp(),
+    ),
+  );
+}
+
+class ExpenseTrackerApp extends StatelessWidget {
+  const ExpenseTrackerApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
       darkTheme: ThemeData.dark().copyWith(
         useMaterial3: true,
         colorScheme: kDarkColorScheme,
@@ -60,6 +72,6 @@ void main() {
       ),
       // themeMode: ThemeMode.system, // default
       home: const Expenses(),
-    ),
-  );
+    );
+  }
 }

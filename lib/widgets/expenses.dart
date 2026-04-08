@@ -1,54 +1,35 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:expense_tracker/providers/expenses_provider.dart';
 import 'package:expense_tracker/widgets/new_expense.dart';
 import 'package:expense_tracker/widgets/expenses_list/expenses_list.dart';
 import 'package:expense_tracker/models/expense.dart';
 import 'package:expense_tracker/widgets/chart/chart.dart';
 
-class Expenses extends StatefulWidget {
+class Expenses extends ConsumerWidget {
   const Expenses({super.key});
 
-  @override
-  State<Expenses> createState() {
-    return _ExpensesState();
-  }
-}
-
-class _ExpensesState extends State<Expenses> {
-  final List<Expense> _registeredExpenses = [
-    Expense(
-      title: 'Flutter Course',
-      amount: 19.99,
-      date: DateTime.now(),
-      category: Category.work,
-    ),
-    Expense(
-      title: 'Cinema',
-      amount: 15.69,
-      date: DateTime.now(),
-      category: Category.leisure,
-    ),
-  ];
-
-  void _openAddExpenseOverlay() {
+  void _openAddExpenseOverlay(BuildContext context, WidgetRef ref) {
     showModalBottomSheet(
       isScrollControlled: true,
       context: context,
-      builder: (ctx) => NewExpense(onAddExpense: _addExpense),
+      builder: (ctx) => NewExpense(
+        onAddExpense: (expense) {
+          ref.read(expensesProvider.notifier).addExpense(expense);
+        },
+      ),
     );
   }
 
-  void _addExpense(Expense expense) {
-    setState(() {
-      _registeredExpenses.add(expense);
-    });
-  }
-
-  void _removeExpense(Expense expense) {
-    final expenseIndex = _registeredExpenses.indexOf(expense);
-    setState(() {
-      _registeredExpenses.remove(expense);
-    });
+  void _removeExpense(
+    BuildContext context,
+    WidgetRef ref,
+    List<Expense> expenses,
+    Expense expense,
+  ) {
+    final expenseIndex = expenses.indexOf(expense);
+    ref.read(expensesProvider.notifier).removeExpense(expense);
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -57,9 +38,9 @@ class _ExpensesState extends State<Expenses> {
         action: SnackBarAction(
           label: 'Undo',
           onPressed: () {
-            setState(() {
-              _registeredExpenses.insert(expenseIndex, expense);
-            });
+            ref
+                .read(expensesProvider.notifier)
+                .restoreExpense(expense, expenseIndex);
           },
         ),
       ),
@@ -67,15 +48,39 @@ class _ExpensesState extends State<Expenses> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final expensesAsync = ref.watch(expensesProvider);
+
+    if (expensesAsync.isLoading) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (expensesAsync.hasError) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Flutter ExpenseTracker'),
+        ),
+        body: const Center(
+          child: Text('Failed to load expenses.'),
+        ),
+      );
+    }
+
+    final expenses = expensesAsync.value ?? [];
+
     Widget mainContent = const Center(
       child: Text('No expenses found. Start adding some!'),
     );
 
-    if (_registeredExpenses.isNotEmpty) {
+    if (expenses.isNotEmpty) {
       mainContent = ExpensesList(
-        expenses: _registeredExpenses,
-        onRemoveExpense: _removeExpense,
+        expenses: expenses,
+        onRemoveExpense: (expense) =>
+            _removeExpense(context, ref, expenses, expense),
       );
     }
 
@@ -84,14 +89,14 @@ class _ExpensesState extends State<Expenses> {
         title: const Text('Flutter ExpenseTracker'),
         actions: [
           IconButton(
-            onPressed: _openAddExpenseOverlay,
+            onPressed: () => _openAddExpenseOverlay(context, ref),
             icon: const Icon(Icons.add),
           ),
         ],
       ),
       body: Column(
         children: [
-          Chart(expenses: _registeredExpenses),
+          Chart(expenses: expenses),
           Expanded(
             child: mainContent,
           ),
