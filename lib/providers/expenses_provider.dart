@@ -17,7 +17,7 @@ class ExpensesNotifier extends StateNotifier<List<Expense>> {
   }
 
   Future<void> addExpense(Expense expense) async {
-    final currentExpenses = [...state];
+    final currentExpenses = state;
     if (currentExpenses.any((item) => item.id == expense.id)) {
       return;
     }
@@ -33,7 +33,7 @@ class ExpensesNotifier extends StateNotifier<List<Expense>> {
   }
 
   Future<void> removeExpense(Expense expense) async {
-    final currentExpenses = [...state];
+    final currentExpenses = state;
     try {
       await ExpenseHandler.instance.deleteExpense(expense.id);
       state = currentExpenses.where((item) => item.id != expense.id).toList();
