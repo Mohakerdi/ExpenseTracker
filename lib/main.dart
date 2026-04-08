@@ -1,6 +1,9 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'package:expense_tracker/widgets/expenses.dart';
 
@@ -16,6 +19,12 @@ var kDarkColorScheme = ColorScheme.fromSeed(
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await EasyLocalization.ensureInitialized();
+  if (!kIsWeb &&
+      (defaultTargetPlatform == TargetPlatform.windows ||
+          defaultTargetPlatform == TargetPlatform.linux)) {
+    sqfliteFfiInit();
+    databaseFactory = databaseFactoryFfi;
+  }
 
   runApp(
     EasyLocalization(
