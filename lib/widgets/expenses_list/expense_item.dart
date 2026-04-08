@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 import 'package:expense_tracker/models/expense.dart';
@@ -22,6 +24,18 @@ class ExpenseItem extends StatelessWidget {
               expense.title,
               style: Theme.of(context).textTheme.titleLarge,
             ),
+            if (expense.imagePath != null) ...[
+              const SizedBox(height: 8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.file(
+                  File(expense.imagePath!),
+                  width: double.infinity,
+                  height: 140,
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ],
             const SizedBox(height: 4),
             Row(
               children: [
