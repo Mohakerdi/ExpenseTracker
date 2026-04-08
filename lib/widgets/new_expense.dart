@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
@@ -21,6 +22,9 @@ class NewExpense extends StatefulWidget {
 }
 
 class _NewExpenseState extends State<NewExpense> {
+  static const _compressedImageMaxDimension = 1080;
+  static const _compressedImageQuality = 75;
+
   final _titleController = TextEditingController();
   final _amountController = TextEditingController();
   final _picker = ImagePicker();
@@ -90,15 +94,41 @@ class _NewExpenseState extends State<NewExpense> {
     }
 
     final appDir = await getApplicationDocumentsDirectory();
+    final compressedImagePath =
+        await _compressImageIfPossible(pickedImage.path);
     final uniqueFileNameWithExtension =
-        '${uuid.v4()}_${path.basename(pickedImage.path)}';
-    final copiedImage = await File(pickedImage.path).copy(
+        '${uuid.v4()}_${path.basename(compressedImagePath)}';
+    final copiedImage = await File(compressedImagePath).copy(
       path.join(appDir.path, uniqueFileNameWithExtension),
     );
 
     setState(() {
       _selectedImage = copiedImage;
     });
+  }
+
+  Future<String> _compressImageIfPossible(String originalImagePath) async {
+    try {
+      final tempDir = await getTemporaryDirectory();
+      final extension = path.extension(originalImagePath);
+      final compressedPath = path.join(
+        tempDir.path,
+        '${uuid.v4()}_compressed$extension',
+      );
+
+      final compressedFile = await FlutterImageCompress.compressAndGetFile(
+        originalImagePath,
+        compressedPath,
+        minWidth: _compressedImageMaxDimension,
+        minHeight: _compressedImageMaxDimension,
+        quality: _compressedImageQuality,
+        keepExif: true,
+      );
+
+      return compressedFile?.path ?? originalImagePath;
+    } catch (_) {
+      return originalImagePath;
+    }
   }
 
   String _localizedCategoryName(Category category) {
