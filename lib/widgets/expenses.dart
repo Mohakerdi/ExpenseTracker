@@ -37,8 +37,9 @@ class _ExpensesState extends ConsumerState<Expenses> {
   }
 
   Future<void> _loadExpenses() async {
+    final expensesNotifier = ref.read(expensesProvider.notifier);
     try {
-      await ref.read(expensesProvider.notifier).loadExpenses();
+      await expensesNotifier.loadExpenses();
       if (!mounted) {
         return;
       }
@@ -58,7 +59,7 @@ class _ExpensesState extends ConsumerState<Expenses> {
     }
   }
 
-  void _openAddExpenseOverlay(BuildContext context, WidgetRef ref) {
+  void _openAddExpenseOverlay(BuildContext context) {
     showModalBottomSheet(
       isScrollControlled: true,
       context: context,
@@ -153,7 +154,7 @@ class _ExpensesState extends ConsumerState<Expenses> {
         title: Text('app_title'.tr()),
         actions: [
           IconButton(
-            onPressed: () => _openAddExpenseOverlay(context, ref),
+            onPressed: () => _openAddExpenseOverlay(context),
             icon: const Icon(Icons.add),
           ),
         ],
