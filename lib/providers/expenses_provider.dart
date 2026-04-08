@@ -7,8 +7,13 @@ class ExpensesNotifier extends StateNotifier<List<Expense>> {
   ExpensesNotifier() : super([]);
 
   Future<void> loadExpenses() async {
-    final expenses = await ExpenseHandler.instance.getExpenses();
-    state = expenses;
+    try {
+      final expenses = await ExpenseHandler.instance.getExpenses();
+      state = expenses;
+    } catch (error) {
+      debugPrint('Failed to load expenses: $error');
+      rethrow;
+    }
   }
 
   Future<void> addExpense(Expense expense) async {
