@@ -23,7 +23,7 @@ class ExpenseHandler {
       path.join(dbPath, 'expenses.db'),
       onCreate: (db, version) {
         return db.execute(
-          'CREATE TABLE expenses(id TEXT PRIMARY KEY, title TEXT, amount REAL, date TEXT, category TEXT)',
+          'CREATE TABLE expenses(id TEXT PRIMARY KEY, title TEXT NOT NULL, amount REAL NOT NULL, date TEXT NOT NULL, category TEXT NOT NULL)',
         );
       },
       version: 1,

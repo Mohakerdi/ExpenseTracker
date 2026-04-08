@@ -24,11 +24,11 @@ class ExpensesNotifier extends StateNotifier<AsyncValue<List<Expense>>> {
 
   Future<void> addExpense(Expense expense) async {
     final currentExpenses = state.value ?? [];
+    if (currentExpenses.any((item) => item.id == expense.id)) {
+      return;
+    }
     try {
       await ExpenseHandler.instance.insertExpense(expense);
-      if (currentExpenses.any((item) => item.id == expense.id)) {
-        return;
-      }
       state = AsyncValue.data([...currentExpenses, expense]);
     } catch (error) {
       debugPrint('Failed to add expense: $error');
