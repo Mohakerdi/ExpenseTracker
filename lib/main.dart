@@ -1,19 +1,12 @@
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
+import 'package:expense_tracker/core/theme/app_theme.dart';
+import 'package:expense_tracker/viewmodels/app_settings_view_model.dart';
 import 'package:expense_tracker/widgets/expenses.dart';
-
-var kColorScheme = ColorScheme.fromSeed(
-  seedColor: const Color.fromARGB(255, 96, 59, 181),
-);
-
-var kDarkColorScheme = ColorScheme.fromSeed(
-  brightness: Brightness.dark,
-  seedColor: const Color.fromARGB(255, 5, 99, 125),
-);
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,94 +26,38 @@ void main() async {
       ],
       path: 'assets/translations',
       fallbackLocale: const Locale('en'),
-      child: const ProviderScope(
-        child: ExpenseTrackerApp(),
-      ),
+      child: const ProviderScope(child: ExpenseTrackerApp()),
     ),
   );
 }
 
-class ExpenseTrackerApp extends StatefulWidget {
+class ExpenseTrackerApp extends ConsumerWidget {
   const ExpenseTrackerApp({super.key});
 
   @override
-  State<ExpenseTrackerApp> createState() => _ExpenseTrackerAppState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(appSettingsProvider);
 
-class _ExpenseTrackerAppState extends State<ExpenseTrackerApp> {
-  ThemeMode _themeMode = ThemeMode.system;
-  bool _isFlipped = false;
-
-  void _setDarkMode(bool isEnabled) {
-    setState(() {
-      _themeMode = isEnabled ? ThemeMode.dark : ThemeMode.light;
-    });
-  }
-
-  void _toggleFlipLayout(bool isEnabled) {
-    setState(() {
-      _isFlipped = isEnabled;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
     return MaterialApp(
       localizationsDelegates: context.localizationDelegates,
       supportedLocales: context.supportedLocales,
       locale: context.locale,
-      darkTheme: ThemeData.dark().copyWith(
-        useMaterial3: true,
-        colorScheme: kDarkColorScheme,
-        cardTheme: const CardThemeData().copyWith(
-          color: kDarkColorScheme.secondaryContainer,
-          margin: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 8,
-          ),
-        ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: kDarkColorScheme.primaryContainer,
-            foregroundColor: kDarkColorScheme.onPrimaryContainer,
-          ),
-        ),
-      ),
-      theme: ThemeData().copyWith(
-        useMaterial3: true,
-        colorScheme: kColorScheme,
-        appBarTheme: const AppBarTheme().copyWith(
-          backgroundColor: kColorScheme.onPrimaryContainer,
-          foregroundColor: kColorScheme.primaryContainer,
-        ),
-        cardTheme: const CardThemeData().copyWith(
-          color: kColorScheme.secondaryContainer,
-          margin: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 8,
-          ),
-        ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: kColorScheme.primaryContainer,
-          ),
-        ),
-        textTheme: ThemeData().textTheme.copyWith(
-              titleLarge: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: kColorScheme.onSecondaryContainer,
-                fontSize: 16,
-              ),
-            ),
-      ),
-      themeMode: _themeMode,
-      home: Expenses(
-        isDarkMode: _themeMode == ThemeMode.dark,
-        isFlipped: _isFlipped,
-        onDarkModeChanged: _setDarkMode,
-        onFlipChanged: _toggleFlipLayout,
-      ),
+      darkTheme: AppTheme.darkTheme,
+      theme: AppTheme.lightTheme,
+      themeMode: settings.themeMode,
+      builder: (context, child) {
+        final currentDirection = Directionality.of(context);
+        final textDirection = settings.isFlipped
+            ? (currentDirection == TextDirection.ltr
+                ? TextDirection.rtl
+                : TextDirection.ltr)
+            : currentDirection;
+        return Directionality(
+          textDirection: textDirection,
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
+      home: const Expenses(),
     );
   }
 }
-
