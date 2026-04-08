@@ -45,13 +45,20 @@ class Expense {
   }
 
   factory Expense.fromMap(Map<String, Object?> map) {
+    final storedCategory = map['category'] as String;
+    final matchingCategories = Category.values
+        .where((value) => value.name == storedCategory)
+        .toList();
+    if (matchingCategories.isEmpty) {
+      throw const FormatException('Invalid expense category value.');
+    }
+
     return Expense(
       id: map['id'] as String,
       title: map['title'] as String,
       amount: (map['amount'] as num).toDouble(),
       date: DateTime.parse(map['date'] as String),
-      category:
-          Category.values.firstWhere((value) => value.name == map['category']),
+      category: matchingCategories.first,
     );
   }
 }

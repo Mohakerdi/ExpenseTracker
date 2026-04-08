@@ -1,5 +1,6 @@
 import 'package:expense_tracker/core/config/expense_handler.dart';
 import 'package:expense_tracker/models/expense.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class ExpensesNotifier extends StateNotifier<AsyncValue<List<Expense>>> {
@@ -29,7 +30,8 @@ class ExpensesNotifier extends StateNotifier<AsyncValue<List<Expense>>> {
         return;
       }
       state = AsyncValue.data([...currentExpenses, expense]);
-    } catch (_) {
+    } catch (error) {
+      debugPrint('Failed to add expense: $error');
       state = AsyncValue.data(currentExpenses);
     }
   }
@@ -41,7 +43,8 @@ class ExpensesNotifier extends StateNotifier<AsyncValue<List<Expense>>> {
       state = AsyncValue.data(
         currentExpenses.where((item) => item.id != expense.id).toList(),
       );
-    } catch (_) {
+    } catch (error) {
+      debugPrint('Failed to remove expense: $error');
       state = AsyncValue.data(currentExpenses);
     }
   }
@@ -59,7 +62,8 @@ class ExpensesNotifier extends StateNotifier<AsyncValue<List<Expense>>> {
         currentExpenses.insert(index, expense);
       }
       state = AsyncValue.data(currentExpenses);
-    } catch (_) {
+    } catch (error) {
+      debugPrint('Failed to restore expense: $error');
       state = AsyncValue.data(currentExpenses);
     }
   }
