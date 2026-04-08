@@ -90,9 +90,9 @@ class _NewExpenseState extends State<NewExpense> {
     }
 
     final appDir = await getApplicationDocumentsDirectory();
-    final fileName = '${uuid.v4()}_${path.basename(pickedImage.path)}';
+    final uniqueFileName = '${uuid.v4()}_${path.basename(pickedImage.path)}';
     final copiedImage = await File(pickedImage.path).copy(
-      path.join(appDir.path, fileName),
+      path.join(appDir.path, uniqueFileName),
     );
 
     setState(() {

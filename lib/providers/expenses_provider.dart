@@ -31,7 +31,9 @@ class ExpensesNotifier extends StateNotifier<AsyncValue<List<Expense>>> {
       await ExpenseHandler.instance.insertExpense(expense);
       state = AsyncValue.data([...currentExpenses, expense]);
     } catch (error) {
-      debugPrint('Failed to add expense (${expense.id}): $error');
+      debugPrint(
+        'Failed to add expense "${expense.title}" (${expense.id}): $error',
+      );
       state = AsyncValue.data(currentExpenses);
     }
   }
@@ -44,7 +46,9 @@ class ExpensesNotifier extends StateNotifier<AsyncValue<List<Expense>>> {
         currentExpenses.where((item) => item.id != expense.id).toList(),
       );
     } catch (error) {
-      debugPrint('Failed to remove expense (${expense.id}): $error');
+      debugPrint(
+        'Failed to remove expense "${expense.title}" (${expense.id}): $error',
+      );
       state = AsyncValue.data(currentExpenses);
     }
   }
@@ -63,7 +67,9 @@ class ExpensesNotifier extends StateNotifier<AsyncValue<List<Expense>>> {
       }
       state = AsyncValue.data(currentExpenses);
     } catch (error) {
-      debugPrint('Failed to restore expense (${expense.id}): $error');
+      debugPrint(
+        'Failed to restore expense "${expense.title}" (${expense.id}): $error',
+      );
       state = AsyncValue.data(currentExpenses);
     }
   }
