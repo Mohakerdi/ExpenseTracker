@@ -36,12 +36,12 @@ class _NewExpenseState extends State<NewExpense> {
         return;
       }
       if (response.file != null) {
-        final imageData = await _compressImageBytesIfPossible(response.file!);
+        final imageBytes = await _compressImageBytesIfPossible(response.file!);
         if (!mounted) {
           return;
         }
         setState(() {
-          _selectedImageData = imageData;
+          _selectedImageData = imageBytes;
         });
       } else {
         // Handle the error if necessary
