@@ -6,8 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:path/path.dart' as path;
-import 'package:path_provider/path_provider.dart';
 
 import 'package:expense_tracker/models/expense.dart';
 import 'package:expense_tracker/widgets/new_expense/expense_form_actions.dart';
@@ -24,7 +22,6 @@ class NewExpense extends StatefulWidget {
 }
 
 class _NewExpenseState extends State<NewExpense> {
-
   @override
   void initState() {
     super.initState();
@@ -39,11 +36,12 @@ class _NewExpenseState extends State<NewExpense> {
         return;
       }
       if (response.file != null) {
+        final imageBytes = await _compressImageBytesIfPossible(response.file!);
         if (!mounted) {
           return;
         }
         setState(() {
-          _selectedImage = File(response.file!.path);
+          _selectedImageData = imageBytes;
         });
       } else {
         // Handle the error if necessary
@@ -54,12 +52,6 @@ class _NewExpenseState extends State<NewExpense> {
 
   static const _compressedImageMaxDimension = 1080;
   static const _compressedImageQuality = 75;
-  static const _supportedImageExtensions = {
-    '.png',
-    '.webp',
-    '.jpg',
-    '.jpeg',
-  };
 
   final _titleController = TextEditingController();
   final _amountController = TextEditingController();
@@ -67,7 +59,7 @@ class _NewExpenseState extends State<NewExpense> {
 
   DateTime? _selectedDate;
   Category _selectedCategory = Category.leisure;
-  File? _selectedImage;
+  Uint8List? _selectedImageData;
 
   Future<void> _presentDatePicker() async {
     final now = DateTime.now();
@@ -112,7 +104,7 @@ class _NewExpenseState extends State<NewExpense> {
         amount: enteredAmount,
         date: _selectedDate!,
         category: _selectedCategory,
-        imagePath: _selectedImage?.path,
+        imageData: _selectedImageData,
       ),
     );
     Navigator.pop(context);
@@ -130,21 +122,13 @@ class _NewExpenseState extends State<NewExpense> {
         return;
       }
 
-      final appDir = await getApplicationDocumentsDirectory();
-      final extension = _imageFileExtensionFromPath(pickedImage.path);
       final imageBytes = await _compressImageBytesIfPossible(pickedImage);
-      final copiedImage = await File(
-        path.join(appDir.path, '${uuid.v4()}$extension'),
-      ).writeAsBytes(
-        imageBytes,
-        flush: true,
-      );
 
       if (!mounted) {
         return;
       }
       setState(() {
-        _selectedImage = copiedImage;
+        _selectedImageData = imageBytes;
       });
     } on PlatformException {
       if (!mounted) {
@@ -176,16 +160,6 @@ class _NewExpenseState extends State<NewExpense> {
     } catch (_) {
       return originalBytes;
     }
-  }
-
-  String _imageFileExtensionFromPath(String imagePath) {
-    final uri = Uri.tryParse(imagePath);
-    final uriPath = uri?.path;
-    final candidatePath =
-        uriPath != null && uriPath.isNotEmpty ? uriPath : imagePath;
-    final extension = path.extension(candidatePath).toLowerCase();
-
-    return _supportedImageExtensions.contains(extension) ? extension : '.jpg';
   }
 
   String _localizedCategoryName(Category category) {
@@ -228,11 +202,11 @@ class _NewExpenseState extends State<NewExpense> {
             ),
             const SizedBox(height: 16),
             ExpenseImagePickerSection(
-              selectedImage: _selectedImage,
+              selectedImageData: _selectedImageData,
               onPickImage: _pickImage,
               onRemoveImage: () {
                 setState(() {
-                  _selectedImage = null;
+                  _selectedImageData = null;
                 });
               },
             ),
