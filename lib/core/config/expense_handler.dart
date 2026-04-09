@@ -23,17 +23,17 @@ class ExpenseHandler {
       path.join(dbPath, 'expenses.db'),
       onCreate: (db, version) {
         return db.execute(
-          'CREATE TABLE expenses(id TEXT PRIMARY KEY, title TEXT NOT NULL, amount REAL NOT NULL, date TEXT NOT NULL, category TEXT NOT NULL, image_path TEXT)',
+          'CREATE TABLE expenses(id TEXT PRIMARY KEY, title TEXT NOT NULL, amount REAL NOT NULL, date TEXT NOT NULL, category TEXT NOT NULL, image_data BLOB)',
         );
       },
       onUpgrade: (db, oldVersion, newVersion) async {
-        if (oldVersion < 2) {
+        if (oldVersion < 3) {
           await db.execute(
-            'ALTER TABLE expenses ADD COLUMN image_path TEXT',
+            'ALTER TABLE expenses ADD COLUMN image_data BLOB',
           );
         }
       },
-      version: 2,
+      version: 3,
     );
   }
 

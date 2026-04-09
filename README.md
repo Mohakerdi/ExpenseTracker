@@ -63,5 +63,5 @@ assets/
 
 ## 📌 Notes
 
-- Expense images are stored locally in app documents storage.
+- Expense images are stored locally in SQLite as binary BLOB data.
 - Desktop SQLite support is initialized for Windows/Linux.

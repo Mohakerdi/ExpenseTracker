@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -7,12 +7,12 @@ import 'package:image_picker/image_picker.dart';
 class ExpenseImagePickerSection extends StatelessWidget {
   const ExpenseImagePickerSection({
     super.key,
-    required this.selectedImage,
+    required this.selectedImageData,
     required this.onPickImage,
     required this.onRemoveImage,
   });
 
-  final File? selectedImage;
+  final Uint8List? selectedImageData;
   final ValueChanged<ImageSource> onPickImage;
   final VoidCallback onRemoveImage;
 
@@ -28,13 +28,13 @@ class ExpenseImagePickerSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (selectedImage == null)
+          if (selectedImageData == null)
             Text('no_image_selected_optional'.tr())
           else
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: Image.file(
-                selectedImage!,
+              child: Image.memory(
+                selectedImageData!,
                 width: double.infinity,
                 height: 140,
                 fit: BoxFit.cover,
@@ -54,7 +54,7 @@ class ExpenseImagePickerSection extends StatelessWidget {
                 icon: const Icon(Icons.photo_library),
                 label: Text('gallery'.tr()),
               ),
-              if (selectedImage != null)
+              if (selectedImageData != null)
                 TextButton(
                   onPressed: onRemoveImage,
                   child: Text('remove'.tr()),
